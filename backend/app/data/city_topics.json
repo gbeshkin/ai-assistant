@@ -1,0 +1,93 @@
+{
+  "topics": [
+    {
+      "id": "parking",
+      "keywords": [
+        "parking",
+        "permit",
+        "resident parking",
+        "park",
+        "parkimine",
+        "parkimisluba",
+        "парковка",
+        "парковочное",
+        "разрешение на парковку",
+        "парковочное разрешение"
+      ],
+      "hint": "Help with parking permits, resident parking, where to start, and how to look for the service online."
+    },
+    {
+      "id": "services",
+      "keywords": [
+        "service",
+        "services",
+        "self-service",
+        "city service",
+        "teenus",
+        "teenused",
+        "e-teenus",
+        "услуга",
+        "услуги",
+        "городские услуги",
+        "самообслуживание"
+      ],
+      "hint": "Help with city services, online service portals, and how to find the right municipal service."
+    },
+    {
+      "id": "transport",
+      "keywords": [
+        "transport",
+        "bus",
+        "tram",
+        "trolley",
+        "route",
+        "timetable",
+        "public transport",
+        "ühistransport",
+        "buss",
+        "tramm",
+        "маршрут",
+        "расписание",
+        "общественный транспорт"
+      ],
+      "hint": "Help with public transport, where to check routes or timetables, and how to start looking for transport information."
+    },
+    {
+      "id": "complaints",
+      "keywords": [
+        "report",
+        "complaint",
+        "problem",
+        "pothole",
+        "broken light",
+        "street issue",
+        "kaebus",
+        "teatada",
+        "auk teel",
+        "яма",
+        "жалоба",
+        "пожаловаться",
+        "проблема во дворе"
+      ],
+      "hint": "Help with reporting city problems such as potholes, broken lights, trash in public areas, and other urban issues."
+    },
+    {
+      "id": "waste",
+      "keywords": [
+        "waste",
+        "trash",
+        "garbage",
+        "recycling",
+        "bulky waste",
+        "prügi",
+        "jäätmed",
+        "taaskasutus",
+        "мусор",
+        "отходы",
+        "переработка",
+        "крупногабаритный мусор"
+      ],
+      "hint": "Help with waste disposal, recycling, city cleanliness, and general municipal maintenance topics."
+    }
+  ]
+}
