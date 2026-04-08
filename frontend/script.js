@@ -1,187 +1,220 @@
-const answerEl = document.getElementById('answer');
-const questionEl = document.getElementById('question');
-const askBtn = document.getElementById('askBtn');
-const micBtn = document.getElementById('micBtn');
-const stopMicBtn = document.getElementById('stopMicBtn');
-const mouthEl = document.getElementById('mouth');
-const statusEl = document.getElementById('status');
-const providerEl = document.getElementById('providerInfo');
+const questionInput = document.getElementById("question");
+const answerEl = document.getElementById("answer");
+const askBtn = document.getElementById("askBtn");
+const micBtn = document.getElementById("micBtn");
+const stopBtn = document.getElementById("stopBtn");
+const micStatus = document.getElementById("micStatus");
+const mouth = document.getElementById("mouth");
 
-let currentAudio = null;
-let mouthTimer = null;
 let recognition = null;
-let isRecognizing = false;
+let isListening = false;
+let currentAudio = null;
+
+function setText(el, text) {
+  if (el) el.textContent = text;
+}
 
 async function loadConfig() {
   try {
-    const res = await fetch('/debug');
+    const res = await fetch("/debug");
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
     const data = await res.json();
-    providerEl.textContent = `Provider: ${data.LLM_PROVIDER || 'unknown'} | Chat model: ${data.OPENAI_MODEL || '-'} | Voice: ${data.OPENAI_TTS_VOICE || '-'}`;
-  } catch {
-    providerEl.textContent = 'Provider info unavailable';
+
+    const providerEl = document.getElementById("provider");
+    const modelEl = document.getElementById("model");
+    const statusEl = document.getElementById("status");
+
+    setText(providerEl, data.LLM_PROVIDER || "unknown");
+    setText(modelEl, data.OPENAI_MODEL || "unknown");
+    setText(statusEl, data.HAS_OPENAI_KEY ? "ready" : "no api key");
+  } catch (err) {
+    console.error("loadConfig error:", err);
   }
-}
-
-function setStatus(text) {
-  statusEl.textContent = text;
-}
-
-function startTalkingAnimation() {
-  stopTalkingAnimation();
-  mouthTimer = setInterval(() => {
-    mouthEl.classList.toggle('talking');
-  }, 180);
-}
-
-function stopTalkingAnimation() {
-  if (mouthTimer) {
-    clearInterval(mouthTimer);
-    mouthTimer = null;
-  }
-  mouthEl.classList.remove('talking');
 }
 
 async function ask() {
-  const question = questionEl.value.trim();
+  const question = questionInput?.value?.trim() || "";
+
   if (!question) {
-    answerEl.textContent = 'Введите вопрос.';
+    setText(answerEl, "Введите вопрос.");
     return;
   }
 
-  askBtn.disabled = true;
-  setStatus('Думаю...');
-  answerEl.textContent = '';
+  setText(answerEl, "Думаю...");
 
   try {
-    const res = await fetch('/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/ask", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ question })
     });
 
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
+
     const data = await res.json();
+    const answer = data.answer || "Пустой ответ.";
+
+    setText(answerEl, answer);
+    await speak(answer);
+  } catch (err) {
+    console.error("ask error:", err);
+    setText(answerEl, `Ошибка запроса: ${err.message}`);
+  }
+}
+
+async function speak(text) {
+  try {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+
+    const res = await fetch("/tts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ question: text })
+    });
 
     if (!res.ok) {
-      answerEl.textContent = `Ошибка ${res.status}: ${JSON.stringify(data)}`;
-      setStatus('Ошибка ответа');
-      return;
+      const errorText = await res.text();
+      throw new Error(`TTS HTTP ${res.status}: ${errorText}`);
     }
 
-    answerEl.textContent = data.answer || 'Пустой ответ.';
-    setStatus(`Ответ готов (${data.provider || 'unknown'}, ${data.language || 'auto'})`);
-    await speakWithServerVoice(data.answer || '');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    currentAudio = audio;
+
+    audio.onplay = () => {
+      if (mouth) mouth.classList.add("talking");
+    };
+
+    audio.onended = () => {
+      if (mouth) mouth.classList.remove("talking");
+      URL.revokeObjectURL(url);
+      currentAudio = null;
+    };
+
+    audio.onerror = () => {
+      if (mouth) mouth.classList.remove("talking");
+      URL.revokeObjectURL(url);
+      currentAudio = null;
+      console.error("Audio playback error");
+    };
+
+    await audio.play();
   } catch (err) {
-    answerEl.textContent = `Ошибка запроса: ${err.message}`;
-    setStatus('Ошибка запроса');
-  } finally {
-    askBtn.disabled = false;
+    console.error("speak error:", err);
   }
 }
 
-async function speakWithServerVoice(text) {
-  if (!text) return;
+function initSpeechRecognition() {
+  const SpeechRecognitionClass =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  setStatus('Генерирую голос...');
-  const res = await fetch('/tts', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question: text })
-  });
-
-  const data = await res.json();
-  if (!res.ok || !data.audio_url) {
-    throw new Error(data.error || 'TTS generation failed');
+  if (!SpeechRecognitionClass) {
+    setText(micStatus, "Голосовой ввод не поддерживается в этом браузере");
+    console.error("SpeechRecognition is not supported");
+    return null;
   }
 
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
-  }
+  const rec = new SpeechRecognitionClass();
 
-  currentAudio = new Audio(data.audio_url);
-  currentAudio.onplay = () => {
-    setStatus(`Говорю (${data.voice})...`);
-    startTalkingAnimation();
-  };
-  currentAudio.onended = () => {
-    stopTalkingAnimation();
-    setStatus('Готово');
-  };
-  currentAudio.onerror = () => {
-    stopTalkingAnimation();
-    setStatus('Ошибка проигрывания аудио');
-  };
-  await currentAudio.play();
-}
+  rec.lang = "et-EE";
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
 
-function setupRecognition() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    setStatus('Голосовой ввод не поддерживается этим браузером');
-    micBtn.disabled = true;
-    stopMicBtn.disabled = true;
-    return;
-  }
-
-  recognition = new SR();
-  recognition.continuous = false;
-  recognition.interimResults = true;
-  recognition.lang = navigator.language || 'en-US';
-
-  recognition.onstart = () => {
-    isRecognizing = true;
-    setStatus('Слушаю...');
+  rec.onstart = () => {
+    isListening = true;
+    setText(micStatus, "Слушаю...");
+    console.log("Speech recognition started");
   };
 
-  recognition.onresult = (event) => {
-    let transcript = '';
-    for (let i = event.resultIndex; i < event.results.length; i += 1) {
-      transcript += event.results[i][0].transcript;
+  rec.onresult = (event) => {
+    console.log("Speech result:", event);
+
+    const transcript = event?.results?.[0]?.[0]?.transcript || "";
+    if (questionInput) {
+      questionInput.value = transcript;
     }
-    questionEl.value = transcript.trim();
-  };
 
-  recognition.onerror = (event) => {
-    isRecognizing = false;
-    setStatus(`Ошибка микрофона: ${event.error}`);
-  };
+    setText(micStatus, transcript ? `Распознано: ${transcript}` : "Речь не распознана");
 
-  recognition.onend = () => {
-    const hadText = questionEl.value.trim().length > 0;
-    const wasRecognizing = isRecognizing;
-    isRecognizing = false;
-    setStatus(hadText ? 'Распознано, отправляю...' : 'Готов');
-    if (wasRecognizing && hadText) {
+    if (transcript.trim()) {
       ask();
     }
   };
+
+  rec.onerror = (event) => {
+    console.error("Speech recognition error:", event);
+    setText(micStatus, `Ошибка микрофона: ${event.error || "unknown"}`);
+  };
+
+  rec.onend = () => {
+    isListening = false;
+    console.log("Speech recognition ended");
+    if (micStatus && micStatus.textContent === "Слушаю...") {
+      setText(micStatus, "Микрофон остановлен");
+    }
+  };
+
+  return rec;
 }
 
-function startRecognition() {
+function startListening() {
   if (!recognition) {
-    setupRecognition();
+    recognition = initSpeechRecognition();
   }
-  if (recognition && !isRecognizing) {
-    questionEl.value = '';
+
+  if (!recognition) return;
+
+  try {
+    setText(micStatus, "Запуск микрофона...");
     recognition.start();
+  } catch (err) {
+    console.error("startListening error:", err);
+    setText(micStatus, `Не удалось запустить микрофон: ${err.message}`);
   }
 }
 
-function stopRecognition() {
-  if (recognition && isRecognizing) {
+function stopListening() {
+  if (recognition && isListening) {
     recognition.stop();
+    setText(micStatus, "Останавливаю микрофон...");
   }
 }
 
-askBtn.addEventListener('click', ask);
-micBtn.addEventListener('click', startRecognition);
-stopMicBtn.addEventListener('click', stopRecognition);
-questionEl.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    ask();
+window.addEventListener("DOMContentLoaded", () => {
+  loadConfig();
+
+  if (askBtn) {
+    askBtn.addEventListener("click", ask);
+  }
+
+  if (questionInput) {
+    questionInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        ask();
+      }
+    });
+  }
+
+  if (micBtn) {
+    micBtn.addEventListener("click", startListening);
+  }
+
+  if (stopBtn) {
+    stopBtn.addEventListener("click", stopListening);
   }
 });
-
-setupRecognition();
-loadConfig();
