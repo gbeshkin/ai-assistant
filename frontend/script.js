@@ -12,15 +12,15 @@ let mouthTimer = null;
 let recognition = null;
 let isRecognizing = false;
 
-async function loadConfig() {
-  try {
-    const res = await fetch('/debug');
-    const data = await res.json();
-    providerEl.textContent = `Provider: ${data.LLM_PROVIDER || 'unknown'} | Chat model: ${data.OPENAI_MODEL || '-'} | Voice: ${data.OPENAI_TTS_VOICE || '-'}`;
-  } catch {
-    providerEl.textContent = 'Provider info unavailable';
-  }
-}
+// async function loadConfig() {
+//   try {
+//     const res = await fetch('/debug');
+//     const data = await res.json();
+//     providerEl.textContent = `Provider: ${data.LLM_PROVIDER || 'unknown'} | Chat model: ${data.OPENAI_MODEL || '-'} | Voice: ${data.OPENAI_TTS_VOICE || '-'}`;
+//   } catch {
+//     providerEl.textContent = 'Provider info unavailable';
+//   }
+// }
 
 function setStatus(text) {
   statusEl.textContent = text;
