@@ -26,15 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/debug")
-def debug():
-    import os
-    return {
-        "LLM_PROVIDER": os.getenv("LLM_PROVIDER"),
-        "OPENAI_MODEL": os.getenv("OPENAI_MODEL"),
-        "HAS_OPENAI_KEY": bool(os.getenv("OPENAI_API_KEY"))
-    }
-    
+
 class AskRequest(BaseModel):
     question: str
     language: Optional[str] = "ru"
@@ -74,13 +66,13 @@ def health():
 
 @app.get("/debug")
 def debug():
+    import os
     return {
-        "provider": get_env("LLM_PROVIDER", "demo"),
-        "openai_model": get_env("OPENAI_MODEL", "gpt-5.4"),
-        "ollama_model": get_env("OLLAMA_MODEL", "qwen2.5:7b"),
-        "has_openai_key": bool(get_env("OPENAI_API_KEY")),
-        "ollama_base_url": get_env("OLLAMA_BASE_URL", "http://localhost:11434"),
+        "LLM_PROVIDER": os.getenv("LLM_PROVIDER"),
+        "OPENAI_MODEL": os.getenv("OPENAI_MODEL"),
+        "HAS_OPENAI_KEY": bool(os.getenv("OPENAI_API_KEY"))
     }
+    
 
 
 @app.post("/ask", response_model=AskResponse)
