@@ -1,17 +1,1 @@
-<svg width="800" height="860" viewBox="0 0 800 860" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="800" height="860" rx="36" fill="#0F172A"/>
-  <circle cx="400" cy="370" r="255" fill="#E5C1A4"/>
-  <path d="M205 260C225 145 315 90 405 90C495 90 586 144 596 263C571 202 503 150 405 150C306 150 232 208 205 260Z" fill="#1F2937"/>
-  <ellipse cx="312" cy="372" rx="34" ry="20" fill="#1E293B"/>
-  <ellipse cx="489" cy="372" rx="34" ry="20" fill="#1E293B"/>
-  <circle cx="312" cy="372" r="8" fill="#F8FAFC"/>
-  <circle cx="489" cy="372" r="8" fill="#F8FAFC"/>
-  <path d="M266 318C287 297 332 291 356 307" stroke="#1F2937" stroke-width="12" stroke-linecap="round"/>
-  <path d="M447 307C471 292 516 298 537 318" stroke="#1F2937" stroke-width="12" stroke-linecap="round"/>
-  <path d="M392 396C376 440 373 472 400 475C427 472 424 441 408 396" fill="#D3A486"/>
-  <path d="M314 542C360 578 447 578 491 542" stroke="#8B1E2D" stroke-width="16" stroke-linecap="round"/>
-  <path d="M225 633C300 688 504 688 577 633V860H225V633Z" fill="#1E3A8A"/>
-  <path d="M272 153C289 116 339 86 405 86C470 86 522 116 538 153C498 127 453 115 405 115C357 115 312 127 272 153Z" fill="#0B1220"/>
-  <circle cx="627" cy="175" r="46" fill="#60A5FA" fill-opacity="0.16"/>
-  <circle cx="664" cy="214" r="18" fill="#22C55E" fill-opacity="0.22"/>
-</svg>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 800'><defs><linearGradient id='bg' x1='0' x2='1' y1='0' y2='1'><stop offset='0%' stop-color='#d7e5f2'/><stop offset='100%' stop-color='#b8cde3'/></linearGradient></defs><rect width='600' height='800' fill='url(#bg)'/><circle cx='300' cy='295' r='160' fill='#f0c9a6'/><rect x='120' y='455' width='360' height='260' rx='28' fill='#2b5876'/><path d='M145 245c15-105 100-170 157-170 93 0 159 61 170 163-48-34-102-53-169-53-63 0-111 17-158 60z' fill='#5a463c'/><ellipse cx='235' cy='295' rx='18' ry='10' fill='#2d2d2d'/><ellipse cx='365' cy='295' rx='18' ry='10' fill='#2d2d2d'/><path d='M250 360c32 22 68 22 100 0' fill='none' stroke='#8b4a4a' stroke-width='8' stroke-linecap='round'/><path d='M225 260c24-12 47-12 68 0' fill='none' stroke='#5a463c' stroke-width='8' stroke-linecap='round'/><path d='M310 260c24-12 47-12 68 0' fill='none' stroke='#5a463c' stroke-width='8' stroke-linecap='round'/><text x='300' y='760' text-anchor='middle' font-family='Arial, sans-serif' font-size='34' fill='#ffffff'>Tallinn AI Assistant</text></svg>

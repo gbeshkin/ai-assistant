@@ -3,61 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tallinn AI Assistant</title>
+  <title>Tallinn AI Assistant v4</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <div class="page-shell">
-    <div class="panel hero-panel">
-      <div class="hero-copy">
-        <div class="badge">Tallinn AI Assistant</div>
-        <h1>Виртуальный городской ассистент</h1>
-      </div>
-
+  <div class="container">
+    <h1>Tallinn AI Assistant v4</h1>
+    <div class="sub">Voice v3: OpenAI chat + OpenAI TTS + microphone + auto language detection</div>
+    <div class="main-grid">
       <div class="avatar-card">
-        <div class="avatar-stage" id="avatarStage">
-          <img class="avatar-image" src="/static/face.svg" alt="AI avatar" />
+        <div class="avatar-wrap">
+          <img src="/static/face.svg" alt="avatar" />
           <div class="mouth" id="mouth"></div>
-          <div class="status-light" id="statusLight"></div>
         </div>
-        <div class="avatar-status" id="statusText">Готов к вопросам</div>
+        <div class="meta" id="providerInfo">Loading provider info...</div>
       </div>
-    </div>
-
-    <div class="panel controls-panel">
-      <div class="toolbar">
-        <label>
-          Язык ответа
-          <select id="language">
-            <option value="ru">Русский</option>
-            <option value="et">Eesti</option>
-            <option value="en">English</option>
-          </select>
-        </label>
-
-        <label class="voice-toggle">
-          <input type="checkbox" id="voiceEnabled" checked />
-          Озвучивать ответ
-        </label>
-      </div>
-
-      <div class="chat-box">
-        <textarea id="question" placeholder="Например: Как получить парковочное разрешение в Таллинне?"></textarea>
-        <button id="askBtn">Спросить</button>
-      </div>
-
-      <div class="meta-line">
-        <span id="provider">Provider: demo</span>
-        <span id="model">Model: built-in-demo</span>
-      </div>
-
-      <div class="answer-card">
-        <h2>Ответ</h2>
-        <p id="answer">Здесь появится ответ ассистента.</p>
+      <div class="chat-card">
+        <label for="question">Ваш вопрос</label>
+        <textarea id="question" placeholder="Например: Kuidas saada parkimisluba Tallinnas?"></textarea>
+        <div class="actions" style="gap: 8px; flex-wrap: wrap;">
+          <button id="askBtn">Спросить</button>
+          <button id="micBtn" type="button">🎤 Говорить</button>
+          <button id="stopMicBtn" type="button">⏹ Стоп</button>
+          <div class="status" id="status">Готов</div>
+        </div>
+        <div class="answer" id="answer"></div>
       </div>
     </div>
   </div>
-
   <script src="/static/script.js"></script>
 </body>
 </html>

@@ -1,39 +1,47 @@
-const askBtn = document.getElementById('askBtn');
-const questionEl = document.getElementById('question');
 const answerEl = document.getElementById('answer');
-const providerEl = document.getElementById('provider');
-const modelEl = document.getElementById('model');
-const languageEl = document.getElementById('language');
-const voiceEnabledEl = document.getElementById('voiceEnabled');
+const questionEl = document.getElementById('question');
+const askBtn = document.getElementById('askBtn');
+const micBtn = document.getElementById('micBtn');
+const stopMicBtn = document.getElementById('stopMicBtn');
 const mouthEl = document.getElementById('mouth');
-const statusTextEl = document.getElementById('statusText');
-const statusLightEl = document.getElementById('statusLight');
+const statusEl = document.getElementById('status');
+const providerEl = document.getElementById('providerInfo');
 
-let speechTimer = null;
-let currentUtterance = null;
+let currentAudio = null;
+let mouthTimer = null;
+let recognition = null;
+let isRecognizing = false;
 
-askBtn.addEventListener('click', askQuestion);
-questionEl.addEventListener('keydown', (event) => {
-  if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-    askQuestion();
+async function loadConfig() {
+  try {
+    const res = await fetch('/debug');
+    const data = await res.json();
+    providerEl.textContent = `Provider: ${data.LLM_PROVIDER || 'unknown'} | Chat model: ${data.OPENAI_MODEL || '-'} | Voice: ${data.OPENAI_TTS_VOICE || '-'}`;
+  } catch {
+    providerEl.textContent = 'Provider info unavailable';
   }
-});
-
-async function speak(text) {
-  const res = await fetch("/tts", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ question: text })
-  });
-
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-
-  const audio = new Audio(url);
-  audio.play();
 }
 
-async function askQuestion() {
+function setStatus(text) {
+  statusEl.textContent = text;
+}
+
+function startTalkingAnimation() {
+  stopTalkingAnimation();
+  mouthTimer = setInterval(() => {
+    mouthEl.classList.toggle('talking');
+  }, 180);
+}
+
+function stopTalkingAnimation() {
+  if (mouthTimer) {
+    clearInterval(mouthTimer);
+    mouthTimer = null;
+  }
+  mouthEl.classList.remove('talking');
+}
+
+async function ask() {
   const question = questionEl.value.trim();
   if (!question) {
     answerEl.textContent = 'Введите вопрос.';
@@ -41,106 +49,139 @@ async function askQuestion() {
   }
 
   askBtn.disabled = true;
-  setIdle(false, 'Думаю над ответом...');
-  stopSpeech();
+  setStatus('Думаю...');
+  answerEl.textContent = '';
 
   try {
-    const response = await fetch('/ask', {
+    const res = await fetch('/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question,
-        language: languageEl.value,
-      }),
+      body: JSON.stringify({ question })
     });
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || `HTTP ${response.status}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      answerEl.textContent = `Ошибка ${res.status}: ${JSON.stringify(data)}`;
+      setStatus('Ошибка ответа');
+      return;
     }
 
-    const data = await response.json();
-    answerEl.textContent = data.answer;
-    providerEl.textContent = `Provider: ${data.provider}`;
-    modelEl.textContent = `Model: ${data.model}`;
-
-    if (voiceEnabledEl.checked) {
-      speak(data.answer, languageEl.value);
-    } else {
-      setIdle(true, 'Ответ готов');
-    }
-  } catch (error) {
-    answerEl.textContent = `Ошибка: ${error.message}`;
-    setIdle(true, 'Ошибка ответа');
+    answerEl.textContent = data.answer || 'Пустой ответ.';
+    setStatus(`Ответ готов (${data.provider || 'unknown'}, ${data.language || 'auto'})`);
+    await speakWithServerVoice(data.answer || '');
+  } catch (err) {
+    answerEl.textContent = `Ошибка запроса: ${err.message}`;
+    setStatus('Ошибка запроса');
   } finally {
     askBtn.disabled = false;
   }
 }
 
-function speak(text, language) {
-  if (!('speechSynthesis' in window)) {
-    setIdle(true, 'Голос браузера недоступен');
+async function speakWithServerVoice(text) {
+  if (!text) return;
+
+  setStatus('Генерирую голос...');
+  const res = await fetch('/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question: text })
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.audio_url) {
+    throw new Error(data.error || 'TTS generation failed');
+  }
+
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+
+  currentAudio = new Audio(data.audio_url);
+  currentAudio.onplay = () => {
+    setStatus(`Говорю (${data.voice})...`);
+    startTalkingAnimation();
+  };
+  currentAudio.onended = () => {
+    stopTalkingAnimation();
+    setStatus('Готово');
+  };
+  currentAudio.onerror = () => {
+    stopTalkingAnimation();
+    setStatus('Ошибка проигрывания аудио');
+  };
+  await currentAudio.play();
+}
+
+function setupRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    setStatus('Голосовой ввод не поддерживается этим браузером');
+    micBtn.disabled = true;
+    stopMicBtn.disabled = true;
     return;
   }
 
-  stopSpeech();
+  recognition = new SR();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = navigator.language || 'en-US';
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  currentUtterance = utterance;
-  utterance.lang = mapLanguage(language);
-  utterance.rate = 1;
-  utterance.pitch = 1;
-
-  utterance.onstart = () => {
-    setIdle(false, 'Ассистент говорит...');
-    animateMouth();
+  recognition.onstart = () => {
+    isRecognizing = true;
+    setStatus('Слушаю...');
   };
 
-  utterance.onend = () => {
-    stopMouth();
-    setIdle(true, 'Готов к вопросам');
-    currentUtterance = null;
+  recognition.onresult = (event) => {
+    let transcript = '';
+    for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      transcript += event.results[i][0].transcript;
+    }
+    questionEl.value = transcript.trim();
   };
 
-  utterance.onerror = () => {
-    stopMouth();
-    setIdle(true, 'Ошибка озвучки');
-    currentUtterance = null;
+  recognition.onerror = (event) => {
+    isRecognizing = false;
+    setStatus(`Ошибка микрофона: ${event.error}`);
   };
 
-  window.speechSynthesis.speak(utterance);
+  recognition.onend = () => {
+    const hadText = questionEl.value.trim().length > 0;
+    const wasRecognizing = isRecognizing;
+    isRecognizing = false;
+    setStatus(hadText ? 'Распознано, отправляю...' : 'Готов');
+    if (wasRecognizing && hadText) {
+      ask();
+    }
+  };
 }
 
-function animateMouth() {
-  stopMouth();
-  speechTimer = setInterval(() => {
-    mouthEl.classList.toggle('talking');
-  }, 120);
-}
-
-function stopMouth() {
-  if (speechTimer) {
-    clearInterval(speechTimer);
-    speechTimer = null;
+function startRecognition() {
+  if (!recognition) {
+    setupRecognition();
   }
-  mouthEl.classList.remove('talking');
-}
-
-function stopSpeech() {
-  stopMouth();
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
+  if (recognition && !isRecognizing) {
+    questionEl.value = '';
+    recognition.start();
   }
-  currentUtterance = null;
 }
 
-function mapLanguage(value) {
-  if (value === 'et') return 'et-EE';
-  if (value === 'en') return 'en-US';
-  return 'ru-RU';
+function stopRecognition() {
+  if (recognition && isRecognizing) {
+    recognition.stop();
+  }
 }
 
-function setIdle(isIdle, text) {
-  statusTextEl.textContent = text;
-  statusLightEl.classList.toggle('active', !isIdle);
-}
+askBtn.addEventListener('click', ask);
+micBtn.addEventListener('click', startRecognition);
+stopMicBtn.addEventListener('click', stopRecognition);
+questionEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    ask();
+  }
+});
+
+setupRecognition();
+loadConfig();
