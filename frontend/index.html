@@ -1,82 +1,67 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tallinn AI Assistant</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
-    textarea { width: 100%; min-height: 120px; }
-    button { padding: 10px 16px; margin-top: 12px; cursor: pointer; }
-    .row { margin-bottom: 16px; }
-    .answer { white-space: pre-wrap; background: #f5f5f5; padding: 12px; border-radius: 8px; }
-    audio { width: 100%; margin-top: 12px; }
-    .status { color: #555; }
-    .muted { color: #666; font-size: 14px; }
-  </style>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <h1>Tallinn AI Assistant v2</h1>
-  <p class="muted">Railway-ready cloud version: text + optional audio.</p>
+  <div class="page-shell">
+    <div class="panel hero-panel">
+      <div class="hero-copy">
+        <div class="badge">Tallinn AI Assistant v3</div>
+        <h1>Виртуальный городской ассистент</h1>
+        <p>
+          Демонстрационная версия с аватаром, голосом браузера и анимацией рта.
+          Подходит для деплоя в Railway.
+        </p>
+      </div>
 
-  <div class="row">
-    <label for="question">question</label>
-    <textarea id="question">Какие документы нужны для регистрации места жительства в Таллинне?</textarea>
+      <div class="avatar-card">
+        <div class="avatar-stage" id="avatarStage">
+          <img class="avatar-image" src="/static/face.svg" alt="AI avatar" />
+          <div class="mouth" id="mouth"></div>
+          <div class="status-light" id="statusLight"></div>
+        </div>
+        <div class="avatar-status" id="statusText">Готов к вопросам</div>
+      </div>
+    </div>
+
+    <div class="panel controls-panel">
+      <div class="toolbar">
+        <label>
+          Язык ответа
+          <select id="language">
+            <option value="ru">Русский</option>
+            <option value="et">Eesti</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+
+        <label class="voice-toggle">
+          <input type="checkbox" id="voiceEnabled" checked />
+          Озвучивать ответ
+        </label>
+      </div>
+
+      <div class="chat-box">
+        <textarea id="question" placeholder="Например: Как получить парковочное разрешение в Таллинне?"></textarea>
+        <button id="askBtn">Спросить</button>
+      </div>
+
+      <div class="meta-line">
+        <span id="provider">Provider: demo</span>
+        <span id="model">Model: built-in-demo</span>
+      </div>
+
+      <div class="answer-card">
+        <h2>Ответ</h2>
+        <p id="answer">Здесь появится ответ ассистента.</p>
+      </div>
+    </div>
   </div>
-  
-  <div class="row">
-    <label><input type="checkbox" id="useAudio" checked /> use Audio</label>
-  </div>
-  <button id="askBtn">ask</button>
-  <p class="status" id="status"></p>
 
-  <h2>answer</h2>
-  <div class="answer" id="answer"></div>
-
-  <h2>audio</h2>
-  <audio id="audio" controls></audio>
-
-  <script>
-    const API_BASE = window.location.origin;
-
-    document.getElementById('askBtn').addEventListener('click', async () => {
-      const question = document.getElementById('question').value.trim();
-      const useAudio = document.getElementById('useAudio').checked;
-      const status = document.getElementById('status');
-      const answer = document.getElementById('answer');
-      const audio = document.getElementById('audio');
-
-      if (!question) {
-        alert('question');
-        return;
-      }
-
-      status.textContent = 'wait...';
-      answer.textContent = '';
-      audio.removeAttribute('src');
-      audio.load();
-
-      try {
-        const res = await fetch(`${API_BASE}/api/ask`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, language, use_audio: useAudio })
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.detail || 'Request failed');
-        }
-
-        answer.textContent = data.answer;
-        if (data.audio_url) {
-          audio.src = `${API_BASE}${data.audio_url}`;
-          audio.load();
-        }
-        status.textContent = `done: ${data.request_id} (${data.provider})`;
-      } catch (err) {
-        status.textContent = `error: ${err.message}`;
-      }
-    });
-  </script>
+  <script src="/static/script.js"></script>
 </body>
 </html>
