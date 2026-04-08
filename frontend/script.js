@@ -19,6 +19,20 @@ questionEl.addEventListener('keydown', (event) => {
   }
 });
 
+async function speak(text) {
+  const res = await fetch("/tts", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ question: text })
+  });
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+
+  const audio = new Audio(url);
+  audio.play();
+}
+
 async function askQuestion() {
   const question = questionEl.value.trim();
   if (!question) {
