@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tallinn AI Assistant v2</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    textarea { width: 100%; min-height: 120px; }
+    button { padding: 10px 16px; margin-top: 12px; cursor: pointer; }
+    .row { margin-bottom: 16px; }
+    .answer { white-space: pre-wrap; background: #f5f5f5; padding: 12px; border-radius: 8px; }
+    audio { width: 100%; margin-top: 12px; }
+    .status { color: #555; }
+    .muted { color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Tallinn AI Assistant v2</h1>
+  <p class="muted">Railway-ready cloud version: text + optional audio.</p>
+
+  <div class="row">
+    <label for="question">Ваш вопрос</label>
+    <textarea id="question">Какие документы нужны для регистрации места жительства в Таллинне?</textarea>
+  </div>
+  <div class="row">
+    <label for="language">Язык ответа</label>
+    <select id="language">
+      <option value="ru">Русский</option>
+      <option value="et">Eesti</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+  <div class="row">
+    <label><input type="checkbox" id="useAudio" checked /> Сгенерировать аудио</label>
+  </div>
+  <button id="askBtn">Спросить</button>
+  <p class="status" id="status"></p>
+
+  <h2>Ответ</h2>
+  <div class="answer" id="answer"></div>
+
+  <h2>Аудио</h2>
+  <audio id="audio" controls></audio>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    document.getElementById('askBtn').addEventListener('click', async () => {
+      const question = document.getElementById('question').value.trim();
+      const language = document.getElementById('language').value;
+      const useAudio = document.getElementById('useAudio').checked;
+      const status = document.getElementById('status');
+      const answer = document.getElementById('answer');
+      const audio = document.getElementById('audio');
+
+      if (!question) {
+        alert('Введите вопрос');
+        return;
+      }
+
+      status.textContent = 'Генерирую ответ...';
+      answer.textContent = '';
+      audio.removeAttribute('src');
+      audio.load();
+
+      try {
+        const res = await fetch(`${API_BASE}/api/ask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, language, use_audio: useAudio })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Request failed');
+        }
+
+        answer.textContent = data.answer;
+        if (data.audio_url) {
+          audio.src = `${API_BASE}${data.audio_url}`;
+          audio.load();
+        }
+        status.textContent = `Готово: ${data.request_id} (${data.provider})`;
+      } catch (err) {
+        status.textContent = `Ошибка: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
