@@ -17,6 +17,28 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 load_dotenv()
 
 app = FastAPI(title="Tallinn AI Assistant", version="3.0")
+@app.get("/test-openai")
+def test_openai():
+    try:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        resp = client.responses.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-5.3"),
+            input="Reply with exactly: OK"
+        )
+
+        return {
+            "ok": True,
+            "provider": "openai",
+            "model": os.getenv("OPENAI_MODEL", "gpt-5.3"),
+            "text": resp.output_text,
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "error_type": type(e).__name__,
+            "error": str(e),
+            "trace": traceback.format_exc(),
+        }
 
 app.add_middleware(
     CORSMiddleware,
