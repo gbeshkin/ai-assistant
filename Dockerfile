@@ -10,7 +10,6 @@ RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r /a
 
 COPY backend /app/backend
 COPY frontend /app/frontend
-COPY output /app/output
 
 ENV PYTHONPATH=/app/backend
 EXPOSE 8000
