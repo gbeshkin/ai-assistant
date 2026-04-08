@@ -68,6 +68,22 @@ def test_openai():
 
 
 # ===== MAIN CHAT =====
+@app.post("/tts")
+def tts(req: AskRequest):
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    audio = client.audio.speech.create(
+        model="gpt-4o-mini-tts",
+        voice="alloy",
+        input=req.question
+    )
+
+    file_path = "output.mp3"
+    with open(file_path, "wb") as f:
+        f.write(audio.read())
+
+    return FileResponse(file_path, media_type="audio/mpeg")
+
 @app.post("/ask")
 def ask(req: AskRequest):
     provider = os.getenv("LLM_PROVIDER", "demo")
