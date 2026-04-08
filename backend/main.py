@@ -26,7 +26,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+@app.get("/debug")
+def debug():
+    import os
+    return {
+        "LLM_PROVIDER": os.getenv("LLM_PROVIDER"),
+        "OPENAI_MODEL": os.getenv("OPENAI_MODEL"),
+        "HAS_OPENAI_KEY": bool(os.getenv("OPENAI_API_KEY"))
+    }
+    
 class AskRequest(BaseModel):
     question: str
     language: Optional[str] = "ru"
