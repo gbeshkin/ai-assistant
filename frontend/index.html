@@ -25,7 +25,7 @@
   </div>
   
   <div class="row">
-    <label><input type="checkbox" id="useAudio" checked /> Сгенерировать аудио</label>
+    <label><input type="checkbox" id="useAudio" checked /> use Audio</label>
   </div>
   <button id="askBtn">ask</button>
   <p class="status" id="status"></p>
@@ -41,7 +41,6 @@
 
     document.getElementById('askBtn').addEventListener('click', async () => {
       const question = document.getElementById('question').value.trim();
-      const language = document.getElementById('language').value;
       const useAudio = document.getElementById('useAudio').checked;
       const status = document.getElementById('status');
       const answer = document.getElementById('answer');
